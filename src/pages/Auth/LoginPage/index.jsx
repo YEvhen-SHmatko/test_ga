@@ -1,8 +1,8 @@
-import React, { Suspense, useState } from 'react';
-import Button from '../../../components/Button';
+import React, { useState } from 'react';
 import Input from '../../../components/Input';
 import { getLS, setLS } from '../../../helpers/localStorage';
 import notification from '../../../helpers/notifications';
+import { checkQuantityClick, objHas } from '../../../helpers/utils';
 import {
   validationName,
   validationPassword,
@@ -12,37 +12,29 @@ function LoginPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     try {
-      const db = getLS('db');
-      const login = getLS('login');
-      if (+login === 3) {
-        setLS('login', new Date().getTime());
-        return;
+      if (checkQuantityClick('login', 3)) {
+        const db = await getLS('db');
+        if (!db || !(db && objHas(db, name))) {
+          notification({ type: 'error', message: 'Invalid credentials' });
+          return;
+        }
+
+        if (!validationName(name) || db[name].name !== name) {
+          notification({ type: 'error', message: 'Invalid credentials' });
+          return;
+        }
+
+        if (!validationPassword(password) || db[name].password !== password) {
+          notification({ type: 'error', message: 'Invalid credentials' });
+          return;
+        }
+        setLS('auth', true);
+        window.location.reload();
       }
-      if (+login + 60000 > new Date().getTime()) {
-        notification({
-          type: 'error',
-          message: 'login user should be blocked for 1 minute',
-        });
-        return;
-      }
-      if (+login + 60000 < new Date().getTime()) {
-        setLS('login', 1);
-      }
-      setLS('login', login + 1);
-      if (!validationName(name) || db[name].name !== name) {
-        notification({ type: 'error', message: 'invalid name' });
-        return;
-      }
-      if (!validationPassword(password) || db[name].password !== password) {
-        notification({ type: 'error', message: 'invalid password' });
-        return;
-      }
-      setLS('auth', true);
-      window.location.reload();
     } catch (error) {
-      console.log(error);
+      notification({ type: 'error', message: 'Something went wrong' });
     }
   };
 
@@ -82,7 +74,9 @@ function LoginPage() {
           onChange={setPassword}
           placeholder="Enter password"
         />
-        <Button onClick={handleLogin}>login</Button>
+        <button type="button" onClick={handleLogin}>
+          Login
+        </button>
       </div>
     </div>
   );

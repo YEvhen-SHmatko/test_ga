@@ -1,8 +1,8 @@
-import React, { Suspense, useState } from 'react';
-import Button from '../../../components/Button';
+import React, { useState } from 'react';
 import Input from '../../../components/Input';
 import { getLS, setLS } from '../../../helpers/localStorage';
 import notification from '../../../helpers/notifications';
+import { checkQuantityClick } from '../../../helpers/utils';
 import {
   validationName,
   validationPassword,
@@ -11,23 +11,28 @@ import {
 function SignupPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const handleRegistration = () => {
+  const handleRegistration = async () => {
     try {
-      const db = getLS('db');
-      if (!validationName(name) || db[name]) {
-        notification({ type: 'error', message: 'invalid name' });
-        return;
+      if (checkQuantityClick('signup', 3)) {
+        const db = await getLS('db');
+        if (db) {
+          if (!validationName(name) || db[name]) {
+            notification({ type: 'error', message: 'invalid name' });
+            return;
+          }
+
+          if (!validationPassword(password)) {
+            notification({ type: 'error', message: 'invalid password' });
+            return;
+          }
+        }
+        const newUser = { name, password };
+        const newDb = db ? { ...db, [name]: newUser } : { [name]: newUser };
+        setLS('db', newDb);
+        notification({ type: 'success', message: 'Success register' });
       }
-      if (!validationPassword(password)) {
-        notification({ type: 'error', message: 'invalid password' });
-        return;
-      }
-      console.log(db);
-      const newUser = { name, password };
-      const newDb = { ...db, [name]: newUser };
-      setLS('db', newDb);
     } catch (error) {
-      console.error('error');
+      notification({ type: 'error', message: 'Something went wrong' });
     }
   };
   return (
@@ -66,7 +71,9 @@ function SignupPage() {
           onChange={setPassword}
           placeholder="Enter password"
         />
-        <Button onClick={handleRegistration}>Registration</Button>
+        <button type="button" onClick={handleRegistration}>
+          Registration
+        </button>
       </div>
     </div>
   );
