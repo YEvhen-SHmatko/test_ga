@@ -1,68 +1,26 @@
-import React, { Suspense } from 'react';
-import {
-  NavLink,
-  Redirect,
-  Route,
-  BrowserRouter,
-  Switch,
-} from 'react-router-dom';
+import React, { StrictMode, Suspense, useEffect } from 'react';
+import { NavLink, Redirect, Switch, useHistory } from 'react-router-dom';
 import { NotificationContainer } from 'react-notifications';
+import ReactGA from 'react-ga';
 import routes from '../routes';
 import { getLS, setLS } from '../helpers/localStorage';
 import AuthWrap from '../helpers/AuthWrap';
+import Header from '../components/Header';
 
-function App() {
+// ReactGA.initialize('G-VVTMBENYM9');
+const App = () => {
   const auth = getLS('auth');
   return (
-    <BrowserRouter>
-      <div className="App">
+    <div className="App">
+      <StrictMode>
         <NotificationContainer />
-        <header className="App-header">
-          {auth && (
-            <>
-              <NavLink
-                to={routes.Root.path}
-                className="link"
-                activeClassName="link_active"
-              >
-                Home
-              </NavLink>
-              <button
-                type="button"
-                onClick={() => {
-                  setLS('auth', false);
-                  window.location.reload();
-                }}
-              >
-                exit
-              </button>
-            </>
-          )}
-          {!auth && (
-            <>
-              <NavLink
-                to={routes.Auth.Login.path}
-                className="link"
-                activeClassName="link_active"
-              >
-                Login
-              </NavLink>
-              <NavLink
-                to={routes.Auth.Signup.path}
-                className="link"
-                activeClassName="link_active"
-              >
-                Signup
-              </NavLink>
-            </>
-          )}
-        </header>
+        <Header auth={auth} />
         <main>
           <Suspense fallback="<Loader />">
             <Switch>
               <AuthWrap
                 exact
-                auth={auth}
+                auth={!!auth}
                 path={routes.Home.path}
                 component={routes.Home.component}
                 goTo={routes.Auth.Login.path}
@@ -85,9 +43,9 @@ function App() {
             </Switch>
           </Suspense>
         </main>
-      </div>
-    </BrowserRouter>
+      </StrictMode>
+    </div>
   );
-}
+};
 
 export default App;
